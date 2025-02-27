@@ -1,129 +1,115 @@
-Лабораторная работа №X. Работа с Nightfall Python SDK для обнаружения и маскировки чувствительных данных
+Лабораторная работа №X. ### **Лабораторная работа №16: Обнаружение утечек секретов с использованием Gitleaks**
 
-Цель работы: Изучить основы использования Nightfall Python SDK для обнаружения, классификации и защиты конфиденциальной информации в соответствии с ГОСТ 19.
+**Цель работы:**  
+Изучить основы работы с инструментом Gitleaks для обнаружения секретов, таких как пароли, API-ключи и токены, в репозиториях Git и файлах. Научиться настраивать и использовать Gitleaks для анализа кода и предотвращения утечек конфиденциальной информации.
 
-Оборудование:
-- Компьютер с установленной операционной системой
-- Python 3.8+
-- Nightfall Python SDK
-- Текстовый редактор или IDE
+**Теоретическая часть:**  
+Gitleaks — это инструмент с открытым исходным кодом, предназначенный для поиска секретов (например, API-ключей, токенов, паролей) в репозиториях Git, файлах и других источниках. Он помогает разработчикам и командам безопасности выявлять утечки конфиденциальных данных на ранних этапах.
 
-Ход работы:
+**Практическая часть:**
 
-1. Установка Nightfall SDK
+#### Задание 1: Установка Gitleaks
+1. Установите Gitleaks на вашу систему:
+   - Для Linux/macOS:
+     ```bash
+     brew install gitleaks
+     ```
+   - Для Windows (с использованием Scoop):
+     ```bash
+     scoop install gitleaks
+     ```
+   - Альтернативный способ (установка из исходного кода):
+     ```bash
+     git clone https://github.com/gitleaks/gitleaks.git
+     cd gitleaks
+     make build
+     ```
 
-```bash
-pip install nightfall
-```
+2. Проверьте установку, выполнив команду:
+   ```bash
+   gitleaks --version
+   ```
 
-2. Инициализация клиента
+#### Задание 2: Сканирование Git-репозитория
+1. Создайте тестовый Git-репозиторий:
+   ```bash
+   mkdir test-repo
+   cd test-repo
+   git init
+   ```
 
-```python
-from nightfall import Nightfall, DetectionRule, Detector
+2. Добавьте тестовые файлы с секретами:
+   - Создайте файл `config.py` с содержимым:
+     ```python
+     API_KEY = "12345-abcdef-67890-ghijk"
+     DATABASE_PASSWORD = "s3cr3tP@ssw0rd"
+     ```
+   - Создайте файл `.env` с содержимым:
+     ```
+     AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+     AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+     ```
 
-# Создание клиента с API ключом
-API_KEY = "your_api_key_here"
-nightfall_client = Nightfall(API_KEY)
+3. Добавьте файлы в репозиторий и сделайте коммит:
+   ```bash
+   git add .
+   git commit -m "Add config files"
+   ```
 
-# Настройка правила детекции
-detection_rule = DetectionRule(
-    name="Sensitive Data Rule",
-    detectors=[
-        Detector(detector_type="CREDIT_CARD"),
-        Detector(detector_type="EMAIL_ADDRESS")
-    ]
-)
-```
-Описание: Создаем клиент Nightfall и задаем правило для обнаружения кредитных карт и email адресов.
+4. Запустите сканирование репозитория с помощью Gitleaks:
+   ```bash
+   gitleaks detect --source . -v
+   ```
 
-3. Обнаружение чувствительных данных
+5. Проанализируйте результаты сканирования. Gitleaks выведет список найденных секретов с указанием файла и строки.
 
-```python
-text_to_scan = "My credit card number is 4111111111111111 and my email is test@example.com"
+#### Задание 3: Настройка конфигурации Gitleaks
+1. Создайте конфигурационный файл `gitleaks-config.toml` для настройки правил обнаружения:
+   ```toml
+   title = "Gitleaks Config"
 
-scan_result = nightfall_client.scan_text(
-    text=text_to_scan,
-    detection_rules=[detection_rule]
-)
+   [[rules]]
+   id = "api-key"
+   description = "API Key"
+   regex = '''[a-zA-Z0-9]{32}'''
+   tags = ["key", "api"]
 
-print(scan_result)
-```
-Ожидаемый результат:
-```
-[
-    {'match': '4111111111111111', 'type': 'CREDIT_CARD'},
-    {'match': 'test@example.com', 'type': 'EMAIL_ADDRESS'}
-]
-```
+   [[rules]]
+   id = "password"
+   description = "Password"
+   regex = '''(?i)password\s*=\s*["']([^"']+)["']'''
+   tags = ["password", "secret"]
+   ```
 
-4. Маскировка данных
+2. Запустите сканирование с использованием конфигурационного файла:
+   ```bash
+   gitleaks detect --source . --config gitleaks-config.toml -v
+   ```
 
-```python
-masked_text = nightfall_client.redact_text(
-    text=text_to_scan,
-    detection_rules=[detection_rule]
-)
+3. Убедитесь, что Gitleaks использует ваши правила для обнаружения секретов.
 
-print(masked_text)
-```
-Ожидаемый результат:
-```
-"My credit card number is [CREDIT_CARD] and my email is [EMAIL_ADDRESS]"
-```
+#### Задание 4: Интеграция Gitleaks в CI/CD
+1. Настройте Gitleaks для автоматического сканирования в CI/CD (например, GitHub Actions):
+   - Создайте файл `.github/workflows/gitleaks.yml`:
+     ```yaml
+     name: Gitleaks Scan
 
-5. Работа с файлами
+     on: [push, pull_request]
 
-```python
-with open('example.pdf', 'rb') as file:
-    file_data = file.read()
+     jobs:
+       gitleaks:
+         runs-on: ubuntu-latest
+         steps:
+           - name: Checkout code
+             uses: actions/checkout@v2
 
-file_scan_result = nightfall_client.scan_file(
-    file_data=file_data,
-    detection_rules=[detection_rule]
-)
+           - name: Run Gitleaks
+             uses: gitleaks/gitleaks-action@v2
+             with:
+               config-path: ./gitleaks-config.toml
+     ```
 
-print(file_scan_result)
-```
-
-6. Дополнительные настройки детекторов
-
-```python
-custom_detection_rule = DetectionRule(
-    name="Custom Sensitive Data Rule",
-    detectors=[
-        Detector(
-            detector_type="REGEX",
-            regex=r"\b\d{6}\b", # Пример: поиска шестизначных чисел
-            name="Custom Regex"
-        )
-    ],
-    min_score=0.7
-)
-
-custom_scan_result = nightfall_client.scan_text(
-    text="Here is a number: 123456",
-    detection_rules=[custom_detection_rule]
-)
-
-print(custom_scan_result)
-```
-
-7. Логирование и отчетность
-
-```python
-import logging
-
-logging.basicConfig(level=logging.INFO)
-
-try:
-    scan_result = nightfall_client.scan_text(
-        text=text_to_scan,
-        detection_rules=[detection_rule]
-    )
-    logging.info("Scan successful: %s", scan_result)
-except Exception as e:
-    logging.error("Scan failed: %s", str(e))
-```
+Эта лабораторная работа позволяет студентам получить практический опыт работы с инструментами для обнаружения секретов и предотвращения утечек конфиденциальной информации в разработке программного обеспечения.
 
 Задания для самостоятельной работы:
 
@@ -132,11 +118,3 @@ except Exception as e:
 3. Проведите сканирование нескольких файлов разных форматов
 4. Настройте собственные регулярные выражения для обнаружения специфичных данных вашей организации
 5. Внедрите логирование всех операций сканирования
-
-Контрольные вопросы:
-
-1. Что такое Nightfall SDK?
-2. Какие типы данных можно обнаруживать с помощью Nightfall?
-3. Как настроить пользовательские детекторы?
-4. Какие форматы файлов поддерживаются для сканирования?
-5. Как организовать маскировку обнаруженных данных?
