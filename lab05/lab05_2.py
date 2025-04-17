@@ -3,7 +3,7 @@ import itertools
 import string
 
 # URL сервера
-URL = "http://localhost:5000/login"
+URL = "http://localhost:5001/login"
 
 # Функция для генерации всех возможных комбинаций
 def generate_passwords(length):
