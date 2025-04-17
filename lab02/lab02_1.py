@@ -6,6 +6,12 @@ from cryptography.fernet import Fernet
 key = Fernet.generate_key()
 cipher = Fernet(key)
 
+# Сохранение ключа в файл
+with open('key.key', 'wb') as key_file:  # 'wb' = запись в бинарном режиме
+    key_file.write(key)
+
+print("[+] Ключ сохранён в key.key")
+
 # Шифрование файла
 with open('secret.txt', 'rb') as f:
     data = f.read()
