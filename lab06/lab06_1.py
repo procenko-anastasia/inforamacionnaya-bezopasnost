@@ -10,7 +10,7 @@ def calculate_hash(data, algorithm='sha256'):
     return hash_object.hexdigest()
 
 # Пример использования
-data = "Hello, Information Security!"
+data = "Привет ГУУ!"
 sha256_hash = calculate_hash(data, 'sha256')
 md5_hash = calculate_hash(data, 'md5')
 
