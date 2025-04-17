@@ -48,7 +48,6 @@ pip install cryptography
 - Генерирует ключ шифрования
 - Шифрует введенный пользователем текст
 - Дешифрует данные обратно в исходный текст
-- Обеспечивает сохранность ключа
 
 ---
 
@@ -56,17 +55,28 @@ pip install cryptography
 
 **Генерация ключа:**
 ```python
-from cryptography.fernet import Fernet
 key = Fernet.generate_key()
+cipher = Fernet(key)
 ```
 **Шифрование:**
 ```python
-cipher = Fernet(key)
-encrypted_text = cipher.encrypt(message.encode())
+with open('secret.txt', 'rb') as f:
+    data = f.read()
+
+encrypted_data = cipher.encrypt(data)
+
+with open('secret_encrypted.txt', 'wb') as f:
+    f.write(encrypted_data)
 ```
 **Дешифрование:**
 ```python
-decrypted_text = cipher.decrypt(encrypted_text).decode()
+with open('secret_encrypted.txt', 'rb') as f:
+    encrypted_data = f.read()
+
+decrypted_data = cipher.decrypt(encrypted_data)
+
+with open('secret_decrypted.txt', 'wb') as f:
+    f.write(decrypted_data)
 ```
 
 ---
@@ -76,10 +86,9 @@ decrypted_text = cipher.decrypt(encrypted_text).decode()
 
 - Создаем виртуальное окружение (пакеты не смешаются с системными)
 - Запуск lab02_1.py:
-  Создает файл key.key с ключом
+  Создает файл key.key с ключом и шифрует текст
 - Запуск lab02_2.py:
-  Шифрует/дешифрует текст
-  Выводит результаты в консоль
+  Дешифрует текст
   
   Пример работы:
 
@@ -96,10 +105,9 @@ $ python lab02_2.py
 
 ## Тексты сообщений оператору
 
-- "Ключ успешно сгенерирован и сохранен в key.key"
-- "Введите текст для шифрования:"
-- "Ошибка: файл key.key не найден"
-- "Расшифрованный текст:"
+- "[+] Ключ сохранён в key.key"
+- "Файл зашифрован и сохранен как 'secret_encrypted.txt'"
+- "Файл дешифрован и сохранен как 'secret_decrypted.txt'н"
 
 ---
 
